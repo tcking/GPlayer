@@ -1,5 +1,7 @@
 # GPlayer
 
+[![pub package](https://img.shields.io/pub/v/gplayer.svg)](https://pub.dartlang.org/packages/gplayer)
+
 Video Player plugin for Flutter,On Android, the backing player is base on [ijkplayer 0.8.8](https://github.com/Bilibili/ijkplayer) （not implement on iOS）
 
 ![The example app running in Android](https://raw.githubusercontent.com/tcking/GPlayer/master/screencap/s1.gif)
@@ -14,7 +16,7 @@ Video Player plugin for Flutter,On Android, the backing player is base on [ijkpl
 6. try to replay when error(only for live video)
 7. specify video scale type
 8. support lazy load (download player on demand)
-9. custom media controller (without change this project source code)
+9. customize media controller (without change this project source code)
 
 
 
@@ -90,3 +92,7 @@ class _MyAppState extends State<MyApp> {
 }
 
 ```
+## Customize media contoller
+1.define a class extend from `buildMediaController`
+2.implement method `Widget buildMediaController(BuildContext context)`
+3.pass the instance to player constructor `GPlayer(uri:'',mediaController:MyMeidaController())`

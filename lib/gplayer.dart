@@ -82,7 +82,7 @@ class GPlayer {
     _listeners.remove(fn);
   }
 
-  void emitListeners(Map params) {
+  void _emitListeners(Map params) {
     for (var fn in _listeners) {
       fn(params);
     }
@@ -194,7 +194,7 @@ class GPlayer {
       default:
     }
     mediaController.updateUI();
-    emitListeners(params);
+    _emitListeners(params);
   }
 
   void _onGetPlayerError(dynamic e) {
@@ -289,6 +289,8 @@ abstract class MediaController {
   }
 
   void onCurrentStateChange({int newState, int oldState});
+
+  ///build media controller
   Widget buildMediaController(BuildContext context);
 }
 
