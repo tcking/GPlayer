@@ -1,4 +1,5 @@
 import 'dart:async';
+
 // import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +18,20 @@ class GPlayer {
   static const int STATE_RELEASE = 6;
   static const int STATE_LAZYLOADING = 7;
 
+  static const int DISPLAY_MODEL_NORMAL = 0;
+  static const int DISPLAY_MODEL_FLOAT = 2;
+
+  int _displayModel = DISPLAY_MODEL_NORMAL;
+
+  get displayModel {
+    return _displayModel;
+  }
+
+  set displayModel(model) {
+    _displayModel = model;
+    updateUI();
+  }
+
   final MethodChannel _channel =
       const MethodChannel('com.github.tcking/gplayer');
   MediaController mediaController;
@@ -30,6 +45,7 @@ class GPlayer {
 
   /// source uri
   String uri;
+
   //the display view aspect ratio,<=0 means follow the video
   double aspectRatio;
 
@@ -93,8 +109,6 @@ class GPlayer {
   void updateUI() {
     // key?.currentState?.updateUI();
     _currentState?.updateUI();
-
-
   }
 
   GPlayer(
@@ -209,6 +223,7 @@ class GPlayer {
   int maxVolume = 15;
   int volume = 7;
   double screenBrightness = 0.5;
+
   Future<Map> getAllInfo() async {
     var _rsp = await _invokeMethod('getAllInfo');
     maxVolume = _rsp['maxVolume'];
@@ -225,6 +240,26 @@ class GPlayer {
     return PlayerDisplay(
       player: this,
       mediaController: mediaController,
+    );
+  }
+
+  /// video display without media controller
+  Widget get  innerDisplay {
+    return _textureId == null
+        ? Container(
+      color: backgroudColor,
+    )
+        : Center(
+      child: aspectRatio >= 0
+          ? AspectRatio(
+        aspectRatio: aspectRatio,
+        child: Texture(
+          textureId: _textureId,
+        ),
+      )
+          : Texture(
+        textureId:_textureId,
+      ),
     );
   }
 
@@ -262,6 +297,7 @@ class Option {
   final int category;
   final String name;
   final value;
+
   Option(this.category, this.name, this.value);
 
   Map asMap() {
@@ -288,6 +324,9 @@ abstract class MediaController {
     player.updateUI();
   }
 
+  /// a common entry to control the player
+  void control(String action);
+
   void onCurrentStateChange({int newState, int oldState});
 
   ///build media controller
@@ -298,7 +337,9 @@ class Error {
   int what;
   int extra;
   String msg;
+
   Error({this.what, this.extra, this.msg});
+
   String get message {
     if (msg != null) {
       return msg;
@@ -311,18 +352,19 @@ class Error {
 class PlayerDisplay extends StatefulWidget {
   final GPlayer player;
   final MediaController mediaController;
+
   PlayerDisplay({Key key, this.player, this.mediaController}) : super(key: key);
+
   @override
   State<StatefulWidget> createState() {
-    player._currentState=PlayerDisplayState();
+    player._currentState = PlayerDisplayState();
     return player._currentState;
   }
-
 }
 
 class PlayerDisplayState extends State<PlayerDisplay> {
   updateUI() {
-    if(mounted){
+    if (mounted) {
       setState(() {});
     }
   }
@@ -331,35 +373,26 @@ class PlayerDisplayState extends State<PlayerDisplay> {
   Widget build(BuildContext context) {
     return MediaControllerProvider(
       controller: widget.mediaController,
-      child: Stack(overflow: Overflow.visible, children: [
-        widget.player._textureId == null
-            ? Container(
-                color: widget.player.backgroudColor,
-              )
-            : Center(
-                child: widget.player.aspectRatio >= 0
-                    ? AspectRatio(
-                        aspectRatio: widget.player.aspectRatio,
-                        child: Texture(
-                          textureId: widget.player._textureId,
-                        ),
-                      )
-                    : Texture(
-                        textureId: widget.player._textureId,
-                      ),
-              ),
-        widget.mediaController.buildMediaController(context)
-      ]),
+      child: widget.player.displayModel == GPlayer.DISPLAY_MODEL_FLOAT
+          ? Container(color: widget.player.backgroudColor,)
+          : Stack(overflow: Overflow.visible, children: [
+              widget.player.innerDisplay,
+              widget.mediaController.buildMediaController(context)
+            ]),
     );
   }
+
+
 }
 
 class MediaControllerProvider extends InheritedWidget {
   final MediaController controller;
   final Widget child;
+
   MediaControllerProvider(
       {Key key, @required this.controller, @required this.child})
       : super(key: key, child: child);
+
   @override
   bool updateShouldNotify(MediaControllerProvider oldWidget) {
     return controller != oldWidget.controller;
@@ -369,6 +402,7 @@ class MediaControllerProvider extends InheritedWidget {
 class _LifeCycleObserver with WidgetsBindingObserver {
   final GPlayer player;
   int _targetStatus;
+
   _LifeCycleObserver({this.player}) {
     WidgetsBinding.instance.addObserver(this);
   }

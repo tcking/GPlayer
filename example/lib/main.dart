@@ -63,7 +63,14 @@ class _MyAppState extends State<MyApp> {
                           })
                     ],
                   ),
-                )
+                ),
+                Padding(padding: EdgeInsets.all(18),child:
+                  Row(children: <Widget>[
+                    RaisedButton.icon(onPressed: (){
+                      player?.mediaController?.control('toggleFloatWindow');
+                    }, icon: Icon(Icons.featured_video), label: Text("toggle float window"))
+                  ],)
+                  ,)
               ],
             ),
           ),

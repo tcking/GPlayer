@@ -36,13 +36,14 @@ class DefaultMediaController with MediaController {
   void onCurrentStateChange({int newState, int oldState}) {
     // TODO: implement onCurrentStateChange
   }
+
   Orientation currentOrientation;
 
   enterFullScreen() async {
-
     SystemChrome.setEnabledSystemUIOverlays([]);
     currentOrientation = MediaQuery.of(context).orientation;
-    if (player.landscapeWhenFullScreen && currentOrientation==Orientation.portrait) {
+    if (player.landscapeWhenFullScreen &&
+        currentOrientation == Orientation.portrait) {
       SystemChrome.setPreferredOrientations([
         DeviceOrientation.landscapeLeft,
         DeviceOrientation.landscapeRight,
@@ -68,11 +69,10 @@ class DefaultMediaController with MediaController {
       },
     ));
     SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
-    if (player.landscapeWhenFullScreen && currentOrientation==Orientation.portrait) {
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.portraitDown,
-        DeviceOrientation.portraitUp
-      ]);
+    if (player.landscapeWhenFullScreen &&
+        currentOrientation == Orientation.portrait) {
+      SystemChrome.setPreferredOrientations(
+          [DeviceOrientation.portraitDown, DeviceOrientation.portraitUp]);
     }
     _displayModel = 0;
     updateUI();
@@ -80,7 +80,8 @@ class DefaultMediaController with MediaController {
 
   exitFullScreen() {
     SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
-    if (player.landscapeWhenFullScreen && currentOrientation==Orientation.portrait) {
+    if (player.landscapeWhenFullScreen &&
+        currentOrientation == Orientation.portrait) {
       SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
         DeviceOrientation.portraitDown,
@@ -89,6 +90,81 @@ class DefaultMediaController with MediaController {
     Navigator.of(context).pop();
     _displayModel = 0;
     updateUI();
+  }
+
+  @override
+  void control(String action) {
+    switch (action) {
+      case 'toggleFloatWindow':
+        if(player.displayModel == GPlayer.DISPLAY_MODEL_FLOAT){
+          _exitFloatWindow();
+        }else{
+          _floatWindow();
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
+  OverlayEntry _floatWindowEntry;
+
+  void _floatWindow() {
+    _floatWindowEntry?.remove();
+    player.displayModel = GPlayer.DISPLAY_MODEL_FLOAT;
+    var os = Overlay.of(context);
+    _floatWindowEntry=OverlayEntry(builder: (context) {
+      return _FloatWindow(player);
+    });
+    os.insert(_floatWindowEntry);
+  }
+
+  void _exitFloatWindow() {
+    _floatWindowEntry?.remove();
+    _floatWindowEntry=null;
+    player.displayModel=GPlayer.DISPLAY_MODEL_NORMAL;
+  }
+}
+
+class _FloatWindow extends StatefulWidget {
+  final GPlayer player;
+
+  _FloatWindow(this.player);
+
+  @override
+  State<StatefulWidget> createState() {
+    return _FloatWindowState();
+  }
+}
+
+class _FloatWindowState extends State<_FloatWindow> {
+  double _bottom = 80;
+  double _right = 80;
+
+  @override
+  initState() {
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      bottom: _bottom,
+      right: _right,
+      child: Listener(
+        onPointerMove: (_) {
+          _bottom = _bottom - _.delta.dy;
+          _right = _right - _.delta.dx;
+          setState((){});
+        },
+        child: SizedBox(
+          height: 100,
+          width: 100,
+          child: widget.player.innerDisplay,
+        ),
+      ),
+    );
+    ;
   }
 }
 
@@ -105,9 +181,11 @@ class _ProgressSliderState extends State<ProgressSlider> {
   _ProgressSliderState() {
     print('======_PlayerSliderState=========');
   }
+
   DefaultMediaController controller;
   double _progress = 0;
   bool _isDraging = false;
+
   @override
   void didChangeDependencies() {
     controller = MediaController.of(context);
@@ -148,6 +226,7 @@ class _ProgressSliderState extends State<ProgressSlider> {
 
 class _ControllerWrapper extends StatefulWidget {
   final DefaultMediaController controller;
+
   _ControllerWrapper(this.controller);
 
   @override
@@ -187,120 +266,121 @@ class _ControllerWrapperState extends State<_ControllerWrapper> {
         ));
   }
 
-  _buildCenterWhenDraging(BuildContext context){
+  _buildCenterWhenDraging(BuildContext context) {
     //horizontal drag & duration > 0
-      if (_dragDrection == 0 &&
-          widget.controller.player.duration != null &&
-          widget.controller.player.duration.inMilliseconds > 0) {
-        RenderBox _rb = context.findRenderObject();
+    if (_dragDrection == 0 &&
+        widget.controller.player.duration != null &&
+        widget.controller.player.duration.inMilliseconds > 0) {
+      RenderBox _rb = context.findRenderObject();
 
-        var _size = _rb.size;
-        var _ds = _dragDelta *
-            widget.controller.player.duration.inSeconds /
-            _size.width;
-        var _dss = (_ds).toStringAsFixed(0) + 'S';
-        return Center(
-            child: Container(
-          height: 48,
-          width: 120,
+      var _size = _rb.size;
+      var _ds = _dragDelta *
+          widget.controller.player.duration.inSeconds /
+          _size.width;
+      var _dss = (_ds).toStringAsFixed(0) + 'S';
+      return Center(
+          child: Container(
+        height: 48,
+        width: 120,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.black54,
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              _ds > 0 ? '+$_dss' : _dss,
+              style: TextStyle(color: Colors.white),
+            ),
+            Text(
+              formatDuration(Duration(
+                      milliseconds: (widget.controller.player
+                              .currentPositionCache.inMilliseconds +
+                          (_ds * 1000).floor()))) +
+                  '/' +
+                  formatDuration(widget.controller.player.duration),
+              style: TextStyle(color: Colors.white),
+            )
+          ],
+        ),
+      ));
+    } else if (_dragDrection == 1 && _dragDelta != null) {
+      var _n; //新的值
+      var _p; //ui上显示的百分比
+      var _icon; //icon
+      if (_controlType == 0) {
+        _n = (_dragDelta / 180 * widget.controller.player.maxVolume).floor() +
+            widget.controller.player.volume;
+        if (_n > widget.controller.player.maxVolume) {
+          _n = widget.controller.player.maxVolume;
+        } else if (_n < 0) {
+          _n = 0;
+        }
+        _p = _n == 0
+            ? 'Off'
+            : (_n / widget.controller.player.maxVolume * 100)
+                    .toStringAsFixed(0) +
+                '%';
+        widget.controller.player.setStreamVolume(_n);
+        _icon = _n == 0
+            ? Icons.volume_off
+            : (_n > 7 ? Icons.volume_up : Icons.volume_down);
+      } else {
+        _n = _dragDelta / 180 +
+            (widget.controller.player.screenBrightness <= 0
+                ? 0.5
+                : widget.controller.player.screenBrightness);
+        if (_n < 0.01) {
+          _n = 0.01;
+        } else if (_n > 1.0) {
+          _n = 1.0;
+        }
+        _p = ((_n * 100) as double).toStringAsFixed(0) + '%';
+        _icon = _n < 0.5
+            ? Icons.brightness_low
+            : (_n > 0.8 ? Icons.brightness_high : Icons.brightness_medium);
+        widget.controller.player.setScreenBrightness(_n);
+      }
+
+      return Center(
+        child: Container(
+          height: 64,
+          width: 64,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: Colors.black54,
             borderRadius: BorderRadius.circular(8.0),
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              Text(
-                _ds > 0 ? '+$_dss' : _dss,
-                style: TextStyle(color: Colors.white),
+              Icon(
+                _icon,
+                size: 32.0,
+                color: Colors.white,
               ),
               Text(
-                formatDuration(Duration(
-                        milliseconds: (widget.controller.player
-                                .currentPositionCache.inMilliseconds +
-                            (_ds * 1000).floor()))) +
-                    '/' +
-                    formatDuration(widget.controller.player.duration),
+                _p,
                 style: TextStyle(color: Colors.white),
               )
             ],
           ),
-        ));
-      } else if (_dragDrection == 1 && _dragDelta != null) {
-        var _n; //新的值
-        var _p; //ui上显示的百分比
-        var _icon; //icon
-        if (_controlType == 0) {
-          _n = (_dragDelta / 180 * widget.controller.player.maxVolume).floor() +
-              widget.controller.player.volume;
-          if (_n > widget.controller.player.maxVolume) {
-            _n = widget.controller.player.maxVolume;
-          } else if (_n < 0) {
-            _n = 0;
-          }
-          _p = _n == 0
-              ? 'Off'
-              : (_n / widget.controller.player.maxVolume * 100)
-                      .toStringAsFixed(0) +
-                  '%';
-          widget.controller.player.setStreamVolume(_n);
-          _icon = _n == 0
-              ? Icons.volume_off
-              : (_n > 7 ? Icons.volume_up : Icons.volume_down);
-        } else {
-          _n = _dragDelta / 180 +
-              (widget.controller.player.screenBrightness <= 0
-                  ? 0.5
-                  : widget.controller.player.screenBrightness);
-          if (_n < 0.01) {
-            _n = 0.01;
-          } else if (_n > 1.0) {
-            _n = 1.0;
-          }
-          _p = ((_n * 100) as double).toStringAsFixed(0) + '%';
-          _icon = _n < 0.5
-              ? Icons.brightness_low
-              : (_n > 0.8 ? Icons.brightness_high : Icons.brightness_medium);
-          widget.controller.player.setScreenBrightness(_n);
-        }
-
-        return Center(
-          child: Container(
-            height: 64,
-            width: 64,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: Colors.black54,
-              borderRadius: BorderRadius.circular(8.0),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: <Widget>[
-                Icon(
-                  _icon,
-                  size: 32.0,
-                  color: Colors.white,
-                ),
-                Text(
-                  _p,
-                  style: TextStyle(color: Colors.white),
-                )
-              ],
-            ),
-          ),
-        );
-      } else {
-        return Container();
-      }
+        ),
+      );
+    } else {
+      return Container();
+    }
   }
 
   _buildCenter(BuildContext context) {
     if (_isDraging) {
       return _buildCenterWhenDraging(context);
-    } else if (widget.controller.player.currentState == GPlayer.STATE_LAZYLOADING) {
+    } else if (widget.controller.player.currentState ==
+        GPlayer.STATE_LAZYLOADING) {
       //show loading
       return Center(
           child: Column(
@@ -317,7 +397,7 @@ class _ControllerWrapperState extends State<_ControllerWrapper> {
           )
         ],
       ));
-    }else if (widget.controller.player.currentState == GPlayer.STATE_ERROR) {
+    } else if (widget.controller.player.currentState == GPlayer.STATE_ERROR) {
       //show loading
       return Center(
           child: Column(
@@ -587,7 +667,7 @@ class _ControllerWrapperState extends State<_ControllerWrapper> {
   }
 
   updateUI() {
-    if(mounted){
+    if (mounted) {
       setState(() {});
     }
   }
