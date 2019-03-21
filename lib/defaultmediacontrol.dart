@@ -1,5 +1,5 @@
 import 'dart:async';
-
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -96,9 +96,9 @@ class DefaultMediaController with MediaController {
   void control(String action) {
     switch (action) {
       case 'toggleFloatWindow':
-        if(player.displayModel == GPlayer.DISPLAY_MODEL_FLOAT){
+        if (player.displayModel == GPlayer.DISPLAY_MODEL_FLOAT) {
           _exitFloatWindow();
-        }else{
+        } else {
           _floatWindow();
         }
         break;
@@ -113,23 +113,23 @@ class DefaultMediaController with MediaController {
     _floatWindowEntry?.remove();
     player.displayModel = GPlayer.DISPLAY_MODEL_FLOAT;
     var os = Overlay.of(context);
-    _floatWindowEntry=OverlayEntry(builder: (context) {
-      return _FloatWindow(player);
+    _floatWindowEntry = OverlayEntry(builder: (context) {
+      return _FloatWindow(this);
     });
     os.insert(_floatWindowEntry);
   }
 
   void _exitFloatWindow() {
     _floatWindowEntry?.remove();
-    _floatWindowEntry=null;
-    player.displayModel=GPlayer.DISPLAY_MODEL_NORMAL;
+    _floatWindowEntry = null;
+    player.displayModel = GPlayer.DISPLAY_MODEL_NORMAL;
   }
 }
 
 class _FloatWindow extends StatefulWidget {
-  final GPlayer player;
+  final DefaultMediaController controller;
 
-  _FloatWindow(this.player);
+  _FloatWindow(this.controller);
 
   @override
   State<StatefulWidget> createState() {
@@ -155,16 +155,115 @@ class _FloatWindowState extends State<_FloatWindow> {
         onPointerMove: (_) {
           _bottom = _bottom - _.delta.dy;
           _right = _right - _.delta.dx;
-          setState((){});
+          setState(() {});
         },
-        child: SizedBox(
-          height: 100,
-          width: 100,
-          child: widget.player.innerDisplay,
+        child: Material(
+          elevation: 5,
+          child: Container(
+            height: 120,
+            width: 120,
+//            decoration: BoxDecoration(boxShadow: [BoxShadow(
+//                color: Colors.black,
+//                blurRadius: 5.0, // has the effect of softening the shadow
+//                spreadRadius: 5.0, // has the effect of extending the shadow
+//                offset: Offset(
+//                  10.0, // horizontal, move right 10
+//                  10.0, // vertical, move down 10
+//                ))]),
+            child: Stack(
+              children: <Widget>[
+                widget.controller.player.innerDisplay,
+                _buildCenter(context),
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: GestureDetector(
+                    onTapUp: (_) {
+                      widget.controller._exitFloatWindow();
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Icon(Icons.close, size: 16),
+                    ),
+                  ),
+                )
+              ],
+            ),
+          ),
         ),
       ),
     );
-    ;
+  }
+
+  _buildCenter(BuildContext context) {
+    var player = widget.controller.player;
+    if (player.currentState == GPlayer.STATE_LAZYLOADING) {
+      //show loading
+      return Center(
+          child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Icon(
+            Icons.cloud_download,
+            size: 16,
+            color: Colors.white,
+          ),
+          Text(
+            'downloading decoder:${player.lazyLoadProgress}%',
+            style: TextStyle(color: Colors.white),
+          )
+        ],
+      ));
+    } else if (player.currentState == GPlayer.STATE_ERROR) {
+      //show loading
+      return Center(
+          child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Icon(
+            Icons.error_outline,
+            size: 16,
+            color: Colors.white,
+          ),
+          Text(
+            player.error.message,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white),
+          )
+        ],
+      ));
+    } else if (player.currentState != GPlayer.STATE_PLAYBACK_COMPLETED &&
+        player.currentState != player.targetState &&
+        player.targetState == GPlayer.STATE_PLAYING) {
+      //show loading
+      return Center(child: CircularProgressIndicator());
+    } else {
+      //play button (show or hide)
+      return Center(
+        child: AnimatedOpacity(
+          opacity: player.currentState == GPlayer.STATE_PAUSED ||
+                  player.currentState == GPlayer.STATE_PLAYBACK_COMPLETED
+              ? 1.0
+              : 0.0,
+          duration: Duration(milliseconds: 200),
+          child: GestureDetector(
+            onTap: () {
+              player.start();
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).dialogBackgroundColor,
+                borderRadius: BorderRadius.circular(24.0),
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(12.0),
+                child: Icon(Icons.play_arrow, size: 16.0),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
   }
 }
 
