@@ -126,6 +126,10 @@ class DefaultMediaController with MediaController {
     _floatWindowEntry = null;
     player.displayModel = GPlayer.DISPLAY_MODEL_NORMAL;
   }
+
+  @override
+  void dispose() {
+  }
 }
 
 class _FloatWindow extends StatefulWidget {
@@ -347,6 +351,12 @@ class _ControllerWrapperState extends State<_ControllerWrapper> {
 
   Timer _timer;
   Timer _getPlayerPostionTimer;
+
+  dispose(){
+    _timer?.cancel();
+    _getPlayerPostionTimer?.cancel();
+    super.dispose();
+  }
 
   Widget _buildTitleBar() {
     return Container(

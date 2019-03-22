@@ -290,6 +290,7 @@ class GPlayer {
 
   void dispose() {
     _invokeMethod('release');
+    mediaController?.dispose();
     _lifeCycleObserver?.dispose();
   }
 }
@@ -324,6 +325,8 @@ abstract class MediaController {
   void updateUI() {
     player.updateUI();
   }
+
+  void dispose();
 
   /// a common entry to control the player
   void control(String action);

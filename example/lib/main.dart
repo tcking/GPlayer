@@ -19,7 +19,7 @@ class _MyAppState extends State<MyApp> {
         uri: 'http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4',
         options: [Option(1, 'multiple_requests', 1)],
         mediaController: DefaultMediaController(
-            title: 'bunny bear', gestureControlEnabled: false))
+            title: 'bunny bear', gestureControlEnabled: true))
       ..init()
       ..addListener((_) {
         //update control button out of player
@@ -34,8 +34,8 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void dispose() {
-    player?.dispose();
     super.dispose();
+    player?.dispose();
   }
 
   @override
