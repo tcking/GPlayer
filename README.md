@@ -93,6 +93,9 @@ class _MyAppState extends State<MyApp> {
 
 ```
 ## Customize media contoller
+
 1.define a class extend from `buildMediaController`
+
 2.implement method `Widget buildMediaController(BuildContext context)`
+
 3.pass the instance to player constructor `GPlayer(uri:'',mediaController:MyMeidaController())`
