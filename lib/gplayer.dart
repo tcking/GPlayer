@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'defaultmediacontrol.dart';
 
+
 class GPlayer {
   // all possible internal states
   static const int STATE_ERROR = -1;
@@ -357,6 +358,7 @@ class PlayerDisplay extends StatefulWidget {
 
   @override
   State<StatefulWidget> createState() {
+    print('-----PlayerDisplay------');
     player._currentState = PlayerDisplayState();
     return player._currentState;
   }

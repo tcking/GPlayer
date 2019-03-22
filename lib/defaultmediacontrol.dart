@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -12,6 +11,7 @@ class DefaultMediaController with MediaController {
   String title;
 
   bool showTitleBar;
+  bool gestureControlEnabled;
 
   /// 0:normal, 1:full screen,2:float window
   int _displayModel = 0;
@@ -20,6 +20,8 @@ class DefaultMediaController with MediaController {
       {this.titlebarHeight = 32,
       this.bottombarHeight = 40,
       this.title = '',
+      this.gestureControlEnabled =
+          true, //enable gesture control,should disabled in scrollable container
       this.showTitleBar = true}) {
     print('=========DefaultMediaController============');
   }
@@ -593,7 +595,7 @@ class _ControllerWrapperState extends State<_ControllerWrapper> {
 
     _buildProgressBar() {
       return Expanded(
-        child: ProgressSlider(),
+        child: widget.controller.player.isLive?Container():ProgressSlider(),
       );
     }
 
@@ -601,7 +603,7 @@ class _ControllerWrapperState extends State<_ControllerWrapper> {
       return Padding(
           padding: EdgeInsets.only(left: 4, right: 4),
           child: Text(
-            formatDuration(
+            widget.controller.player.isLive?'Live':formatDuration(
               widget.controller.player.duration,
             ),
             style: TextStyle(color: Colors.white),
@@ -665,65 +667,76 @@ class _ControllerWrapperState extends State<_ControllerWrapper> {
         onTap: () {
           _showThenHide();
         },
-        onDoubleTap: () {},
-        onHorizontalDragStart: (_) {
-          _isDraging = true;
-          _dragStart = _.globalPosition;
-          _dragDrection = 0;
-          print('onHorizontalDragStart:$_');
-        },
-        onHorizontalDragEnd: (_) {
-          _isDraging = false;
-          RenderBox _rb = context.findRenderObject();
+        onHorizontalDragStart: !widget.controller.gestureControlEnabled
+            ? null
+            : (_) {
+                _isDraging = true;
+                _dragStart = _.globalPosition;
+                _dragDrection = 0;
+                print('onHorizontalDragStart:$_');
+              },
+        onHorizontalDragEnd: !widget.controller.gestureControlEnabled
+            ? null
+            : (_) {
+                _isDraging = false;
+                RenderBox _rb = context.findRenderObject();
 
-          var _size = _rb.size;
-          var _ds = _dragDelta *
-              widget.controller.player.duration.inSeconds /
-              _size.width;
+                var _size = _rb.size;
+                var _ds = _dragDelta *
+                    widget.controller.player.duration.inSeconds /
+                    _size.width;
 
-          var _n =
-              widget.controller.player.currentPositionCache.inMilliseconds +
-                  (_ds * 1000).floor();
-          widget.controller.player.seekTo(_n);
+                var _n = widget
+                        .controller.player.currentPositionCache.inMilliseconds +
+                    (_ds * 1000).floor();
+                widget.controller.player.seekTo(_n);
 
-          print('onHorizontalDragEnd:$_');
-          updateUI();
-        },
-        onVerticalDragStart: (_) async {
-          _isDraging = true;
-          _dragStart = _.globalPosition;
-          _dragDrection = 1;
+                print('onHorizontalDragEnd:$_');
+                updateUI();
+              },
+        onVerticalDragStart: !widget.controller.gestureControlEnabled
+            ? null
+            : (_) async {
+                _isDraging = true;
+                _dragStart = _.globalPosition;
+                _dragDrection = 1;
 
-          RenderBox _rb = context.findRenderObject();
-          final topLeftPosition = _rb.localToGlobal(Offset.zero);
-          if (topLeftPosition.dx + _dragStart.dx < _rb.size.width / 2) {
-            _controlType = 0;
-          } else {
-            _controlType = 1;
-          }
-          await widget.controller.player.getAllInfo();
-          print('onVerticalDragStart:$_');
-        },
-        onVerticalDragEnd: (_) {
-          _isDraging = false;
-          print('onVerticalDragEnd:$_');
-          updateUI();
-        },
-        onHorizontalDragUpdate: (_) {
-          _dragcurrent = _.globalPosition;
-          _dragDelta = _dragcurrent.dx - _dragStart.dx;
-          print('onHorizontalDragUpdate:$_dragDelta');
+                RenderBox _rb = context.findRenderObject();
+                final topLeftPosition = _rb.localToGlobal(Offset.zero);
+                if (topLeftPosition.dx + _dragStart.dx < _rb.size.width / 2) {
+                  _controlType = 0;
+                } else {
+                  _controlType = 1;
+                }
+                await widget.controller.player.getAllInfo();
+                print('onVerticalDragStart:$_');
+              },
+        onVerticalDragEnd: !widget.controller.gestureControlEnabled
+            ? null
+            : (_) {
+                _isDraging = false;
+                print('onVerticalDragEnd:$_');
+                updateUI();
+              },
+        onHorizontalDragUpdate: !widget.controller.gestureControlEnabled
+            ? null
+            : (_) {
+                _dragcurrent = _.globalPosition;
+                _dragDelta = _dragcurrent.dx - _dragStart.dx;
+                print('onHorizontalDragUpdate:$_dragDelta');
 
-          updateUI();
-        },
-        onVerticalDragUpdate: (_) {
-          // print('onVerticalDragUpdate:${_.globalPosition}');
-          _dragcurrent = _.globalPosition;
-          _dragDelta = _dragStart.dy - _dragcurrent.dy;
-          // print('onVerticalDragUpdate:$_dragDelta');
+                updateUI();
+              },
+        onVerticalDragUpdate: !widget.controller.gestureControlEnabled
+            ? null
+            : (_) {
+                // print('onVerticalDragUpdate:${_.globalPosition}');
+                _dragcurrent = _.globalPosition;
+                _dragDelta = _dragStart.dy - _dragcurrent.dy;
+                // print('onVerticalDragUpdate:$_dragDelta');
 
-          updateUI();
-        },
+                updateUI();
+              },
         child: FractionallySizedBox(
           widthFactor: 1.0,
           heightFactor: 1.0,
