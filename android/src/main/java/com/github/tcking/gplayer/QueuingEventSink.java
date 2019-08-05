@@ -1,5 +1,8 @@
 package com.github.tcking.gplayer;
 
+import android.os.Handler;
+import android.os.Looper;
+
 import java.util.ArrayList;
 
 import io.flutter.plugin.common.EventChannel;
@@ -14,69 +17,81 @@ import io.flutter.plugin.common.EventChannel;
  * externally.
  */
 final class QueuingEventSink implements EventChannel.EventSink {
-  private EventChannel.EventSink delegate;
-  private ArrayList<Object> eventQueue = new ArrayList<>();
-  private boolean done = false;
+    private EventChannel.EventSink delegate;
+    private ArrayList<Object> eventQueue = new ArrayList<>();
+    private boolean done = false;
+    private static Handler mainThandler = new Handler(Looper.getMainLooper());
 
-  public void setDelegate(EventChannel.EventSink delegate) {
-    this.delegate = delegate;
-    maybeFlush();
-  }
-
-  @Override
-  public void endOfStream() {
-    enqueue(new EndOfStreamEvent());
-    maybeFlush();
-    done = true;
-  }
-
-  @Override
-  public void error(String code, String message, Object details) {
-    enqueue(new ErrorEvent(code, message, details));
-    maybeFlush();
-  }
-
-  @Override
-  public void success(Object event) {
-    enqueue(event);
-    maybeFlush();
-  }
-
-  private void enqueue(Object event) {
-    if (done) {
-      return;
+    public void setDelegate(EventChannel.EventSink delegate) {
+        this.delegate = delegate;
+        maybeFlush();
     }
-    eventQueue.add(event);
-  }
 
-  private void maybeFlush() {
-    if (delegate == null) {
-      return;
+    @Override
+    public void endOfStream() {
+        enqueue(new EndOfStreamEvent());
+        maybeFlush();
+        done = true;
     }
-    for (Object event : eventQueue) {
-      if (event instanceof EndOfStreamEvent) {
-        delegate.endOfStream();
-      } else if (event instanceof ErrorEvent) {
-        ErrorEvent errorEvent = (ErrorEvent) event;
-        delegate.error(errorEvent.code, errorEvent.message, errorEvent.details);
-      } else {
-        delegate.success(event);
-      }
+
+    @Override
+    public void error(String code, String message, Object details) {
+        enqueue(new ErrorEvent(code, message, details));
+        maybeFlush();
     }
-    eventQueue.clear();
-  }
 
-  private static class EndOfStreamEvent {}
-
-  private static class ErrorEvent {
-    String code;
-    String message;
-    Object details;
-
-    ErrorEvent(String code, String message, Object details) {
-      this.code = code;
-      this.message = message;
-      this.details = details;
+    @Override
+    public void success(Object event) {
+        enqueue(event);
+        maybeFlush();
     }
-  }
+
+    private void enqueue(final Object event) {
+        if (done) {
+            return;
+        }
+        mainThandler.post(new Runnable() {
+            @Override
+            public void run() {
+                eventQueue.add(event);
+            }
+        });
+    }
+
+    private void maybeFlush() {
+        if (delegate == null) {
+            return;
+        }
+        mainThandler.post(new Runnable() {
+            @Override
+            public void run() {
+                for (Object event : eventQueue) {
+                    if (event instanceof EndOfStreamEvent) {
+                        delegate.endOfStream();
+                    } else if (event instanceof ErrorEvent) {
+                        ErrorEvent errorEvent = (ErrorEvent) event;
+                        delegate.error(errorEvent.code, errorEvent.message, errorEvent.details);
+                    } else {
+                        delegate.success(event);
+                    }
+                }
+                eventQueue.clear();
+            }
+        });
+    }
+
+    private static class EndOfStreamEvent {
+    }
+
+    private static class ErrorEvent {
+        String code;
+        String message;
+        Object details;
+
+        ErrorEvent(String code, String message, Object details) {
+            this.code = code;
+            this.message = message;
+            this.details = details;
+        }
+    }
 }

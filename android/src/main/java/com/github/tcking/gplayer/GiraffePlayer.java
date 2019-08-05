@@ -177,15 +177,21 @@ public class GiraffePlayer implements MediaController.MediaPlayerControl {
 //                        if(surfaceTextureEntry!=null){
 //                            surfaceTextureEntry.release();
 //                        }
-                        if (surfaceTextureEntry == null) {
-                            surfaceTextureEntry = registrar.textures().createSurfaceTexture();
-                        }
-                        if (surface != null) {
-                            surface.release();
-                        }
-                        surface = new Surface(surfaceTextureEntry.surfaceTexture());
-                        mediaPlayer.setSurface(surface);
-                        proxyListener().onSetDisplay(GiraffePlayer.this, surfaceTextureEntry.id());
+                        new Handler(Looper.getMainLooper()).post(new Runnable() {
+                            @Override
+                            public void run() {
+
+                                if (surfaceTextureEntry == null) {
+                                    surfaceTextureEntry = registrar.textures().createSurfaceTexture();
+                                }
+                                if (surface != null) {
+                                    surface.release();
+                                }
+                                surface = new Surface(surfaceTextureEntry.surfaceTexture());
+                                mediaPlayer.setSurface(surface);
+                                proxyListener().onSetDisplay(GiraffePlayer.this, surfaceTextureEntry.id());
+                            }
+                        });
                         break;
                     case MSG_CTRL_RETRY:
                         init();
@@ -415,7 +421,7 @@ public class GiraffePlayer implements MediaController.MediaPlayerControl {
                 if (option.getValue() instanceof String) {
                     ijkMediaPlayer.setOption(option.getCategory(), option.getName(), ((String) option.getValue()));
                 } else if (option.getValue() instanceof Integer) {
-                    ijkMediaPlayer.setOption(option.getCategory(), option.getName(),Long.valueOf((Integer)option.getValue()));
+                    ijkMediaPlayer.setOption(option.getCategory(), option.getName(), Long.valueOf((Integer) option.getValue()));
                 }
             }
         } else if (mediaPlayer instanceof AndroidMediaPlayer) {
