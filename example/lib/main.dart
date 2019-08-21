@@ -162,12 +162,11 @@ class VideoList extends StatelessWidget {
     Widget divider2 = Divider(color: Colors.green);
 
     const videos = [
+      'http://ivi.bupt.edu.cn/hls/cctv3hd.m3u8',
+      'http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4',
+      'http://ivi.bupt.edu.cn/hls/cctv6hd.m3u8',
       'http://zhibo.hkstv.tv/livestream/zb2yhapo/playlist.m3u8',
       'http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4',
-      'rtmp://live.hkstv.hk.lxdns.com/live/hks2',
-      'http://zhibo.hkstv.tv/livestream/zb2yhapo/playlist.m3u8',
-      'http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4',
-      'rtmp://live.hkstv.hk.lxdns.com/live/hks2'
     ];
 
     return Scaffold(
