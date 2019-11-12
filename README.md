@@ -19,6 +19,9 @@ Video Player plugin for Flutter,On Android, the backing player is base on [ijkpl
 9. customize media controller (without change this project source code)
 
 
+*note:* this using lazy load for default,it will take a few seconds to download decoders before first play, 
+if you want to include the decoder in your apk just find the `android/build.gradle` and add the dependencies
+which you want to support.
 
 ## Getting Started
 
@@ -31,7 +34,7 @@ dependencies:
     sdk: flutter
 
   # add gplayer dependency
-  gplayer: ^0.0.1
+  gplayer: ^0.0.2
 ```
 
 ### 2.create player

@@ -35,5 +35,11 @@ android {
 
 dependencies{
     compile 'com.github.tcking:ijkplayer-java:0.8.8'
-//    compile 'com.github.tcking:ijkplayer-armv7a:0.8.8'
+
+    //not want to using lazy load,uncomment the line which aib you want to support
+//    api 'com.github.tcking:ijkplayer-armv7a:0.8.8-full' //support armv7
+//    api 'com.github.tcking:ijkplayer-arm64:0.8.8-full' //support arm64
+//    api 'com.github.tcking:ijkplayer-armv5:0.8.8-full' //support armv5
+//    api 'com.github.tcking:ijkplayer-x86:0.8.8-full' //support x86
+//    api 'com.github.tcking:ijkplayer-x86_64:0.8.8-full' //support x86_64
 }
